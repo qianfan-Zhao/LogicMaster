@@ -1,0 +1,37 @@
+#include "platform.h"
+
+void usart_mode_init(void)
+{
+	DECLARE_GPIO_INIT(ioIt,AF,PP,UP,3);
+	ioIt.GPIO_Pin=USART_RX_PIN | USART_TX_PIN;
+	DECLARE_USART_INIT(uIt,USART_BAUD);
+	
+	GPIO_Init(USART_GPIO,&ioIt);
+	GPIO_PinAFConfig(USART_GPIO,USART_RX_SRC,USART_GPIO_AF);
+	GPIO_PinAFConfig(USART_GPIO,USART_TX_SRC,USART_GPIO_AF);
+
+	USART_ClkEn();
+	USART_Init(USART,&uIt);
+	USART_ClearFlag(USART,USART_FLAG_RXNE);
+	USART_ClearFlag(USART,USART_FLAG_TXE);
+	NVIC_EnableIRQ(USART_IRQn);
+	USART_ITConfig(USART,USART_IT_RXNE,ENABLE);
+	
+	USART_Cmd(USART,ENABLE);
+}
+
+
+void init(void)
+{
+	RCC_AHBPeriphClockCmd(0xFFFFFFFF,ENABLE);
+	
+	usart_mode_init();
+}
+
+
+
+
+
+
+
+
