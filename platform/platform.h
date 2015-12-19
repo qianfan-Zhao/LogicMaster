@@ -12,6 +12,12 @@
 
 #include "boardconfig.h"
 
+/* serial communication functions */
+int __io_putchar(int );
+int __io_getchar(void);
+int __io_puts(const char *);
+char *__io_gets(char *,int);
+
 /* decalre a GPIO_InitTypeDef valible. named as 'name'
  *  pin can from 0 to 15.
  *  mode can be 'IN' ,'OUT', 'AF', 'AN'

@@ -20,11 +20,7 @@ int __io_getchar(void)
 		case '\r':ch='\n';return __io_putchar(ch);
 		case 0x1b:ch='^'; return __io_putchar(ch);
 		case 0x08:/* backspace in minicom or putty */
-		case 0x7F: 
-			/* earse char in screen(replace with space
-			 and return the backspace code */
-			__io_putchar(ch); __io_putchar(' ');__io_putchar(ch);
-			return ch;
+		case 0x7F: return ch; /* send backspace or not depend on user app */
 		default: return __io_putchar(ch);
 	}
 	
@@ -55,7 +51,11 @@ char * __io_gets(char *buf,int len)
 		case '\n':buf[idx]='\0';return buf;
 		case 0x08:
 		case 0x7F: /* backspace in minicom or putty */
-			if(idx>0) idx--;break;
+			if(idx>0) { /* need earse a char in computer */
+				idx--;
+				__io_putchar(ch); __io_putchar(' ');__io_putchar(ch);
+			}
+			break;
 		default:
 			buf[idx]=ch;idx++;break;
 		}
