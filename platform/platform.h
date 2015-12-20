@@ -18,9 +18,24 @@ int __io_getchar(void);
 int __io_puts(const char *);
 char *__io_gets(char *,int);
 
+/* platform gpio functions */
+enum {GPIO_INPUT,GPIO_OUTPUT,GPIO_ANALOG};
+enum {GPIO_PULLNO,GPIO_PULLUP,GPIO_PULLDOWN};
+#define is_gpio_mode(mode) ( ((mode)>=GPIO_INPUT)&&((mode)<=GPIO_ANALOG) )
+#define is_gpio_pull(pull) ( ((pull)>=GPIO_PULLNO)&&((pull)<=GPIO_PULLDOWN) )
+
+/* if param 'pin' isn't a really pin,this function will return -1. 
+ * else return 0 except gpio_read 
+ * (gpio_read will return the pin's actual value).
+ */
+int gpio_mode(int pin,int mode,int pull);
+int gpio_write(int pin,int value);
+int gpio_read(int pin);
+int gpio_toggle(int pin);
+
 /* decalre a GPIO_InitTypeDef valible. named as 'name'
- *  pin can from 0 to 15.
  *  mode can be 'IN' ,'OUT', 'AF', 'AN'
+ *  ppod can be 'PP' or 'OD'
  *  updown can be 'UP','DOWN'
  *  speed can from 1 to 3
  */

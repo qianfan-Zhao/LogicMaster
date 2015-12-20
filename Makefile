@@ -8,6 +8,7 @@ name := LogicMaster
 include platform/platform.mk
 include stlib/stlib.mk
 include lua/lua.mk
+include llibs/llibs.mk
 include common.mk
 
 all:$(name).bin

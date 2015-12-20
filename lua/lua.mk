@@ -6,9 +6,6 @@ OBJS +=	lua/lapi.o lua/lcode.o lua/lctype.o lua/ldebug.o lua/ldo.o lua/ldump.o \
 				lua/lopcodes.o lua/lparser.o lua/lstate.o lua/lstring.o lua/ltable.o \
 				lua/ltm.o lua/lundump.o lua/lvm.o lua/lzio.o
 				
-#code for init lua libs.DO NOT DELETE
-OBJS += lua/linit.o
-				
 #lua libs.you can delete some depends on your apps.
 OBJS +=	lua/lauxlib.o lua/lbaselib.o lua/lbitlib.o lua/lcorolib.o lua/ldblib.o \
 				lua/liolib.o lua/lmathlib.o lua/lstrlib.o lua/ltablib.o lua/loadlib.o 
