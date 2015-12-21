@@ -109,6 +109,14 @@ static const luaL_Reg gpioLib[] = {
     {"ANALOG",NULL},
     {"PULLUP",NULL},
     {"PULLDOWN",NULL},
+    
+    {"A0",NULL},
+    {"A1",NULL},
+    {"A2",NULL},
+    {"A3",NULL},
+    {"A4",NULL},
+    {"A5",NULL},
+    
     {NULL,NULL},
 };
 
@@ -130,6 +138,19 @@ LUAMOD_API int luaopen_gpio (lua_State *L)
     lua_setfield(L,-2,"PULLUP");
     lua_pushinteger(L,LGPIO_PULLDOWN);
     lua_setfield(L,-2,"PULLDOWN");
+    
+    lua_pushinteger(L,GPIO_A0);
+    lua_setfield(L,-2,"A0");
+    lua_pushinteger(L,GPIO_A1);
+    lua_setfield(L,-2,"A1");
+    lua_pushinteger(L,GPIO_A2);
+    lua_setfield(L,-2,"A2");
+    lua_pushinteger(L,GPIO_A3);
+    lua_setfield(L,-2,"A3");
+    lua_pushinteger(L,GPIO_A4);
+    lua_setfield(L,-2,"A4");
+    lua_pushinteger(L,GPIO_A5);
+    lua_setfield(L,-2,"A5");
 
     return 1;
 }

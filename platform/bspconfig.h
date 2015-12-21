@@ -1,5 +1,5 @@
-#ifndef board_config_h
-#define board_config_h
+#ifndef bsp_config_h
+#define bsp_config_h
 	
  /* Left			   NucleoF303RE				   	 Right			
   *                                   15 PB8(SCL)

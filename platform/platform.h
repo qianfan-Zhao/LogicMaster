@@ -10,7 +10,7 @@
 #include "stm32f30x_gpio.h"
 #include "stm32f30x_usart.h"
 
-#include "boardconfig.h"
+#include "bspconfig.h"
 
 /* serial communication functions */
 int __io_putchar(int );
