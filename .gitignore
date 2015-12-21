@@ -32,7 +32,6 @@
 # Debug files
 *.dSYM/
 
-#doc folder will upload after develop complete
-doc/
+#vim backup file
 *~
 
