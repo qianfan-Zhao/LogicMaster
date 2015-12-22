@@ -19,6 +19,11 @@
 #define LGPIO_PULLUP   MAKE_P(GPIO_LIB_TYPE,5,GPIO_PULLUP)
 #define LGPIO_PULLDOWN MAKE_P(GPIO_LIB_TYPE,6,GPIO_PULLDOWN)
 
+#define is_lgpio_mode(mode) ( (P_TYPE(mode)==GPIO_LIB_TYPE) && \
+                              (P_NUM(mode)>=1) && (P_NUM(mode)<=3) )
+#define is_lgpio_pull(pull) ( (P_TYPE(pull)==GPIO_LIB_TYPE) && \
+                              (P_NUM(pull)>=4) && (P_NUM(pull )<=6) )                       
+
 /**
  ** Lua function: gpio.mode(pin,mode,pull)
  ** mode can be : gpio.INPUT,gpio.OUTPUT,gpio.ANALOG
@@ -34,9 +39,14 @@ static int lgpio_mode(lua_State *L)
 	mode=luaL_checkinteger(L,2);
 	if(paramcount>2)
 		pull=luaL_checkinteger(L,3);
+		
+	if(!is_lgpio_mode(mode) || !is_lgpio_pull(pull) ){
+		lua_pushstring(L,"param error! gpio.mode(pin,mode)\n");
+		lua_error(L);
+	}
 
 	if(gpio_mode(pin,P_DATA(mode),P_DATA(pull))){
-		lua_pushstring(L,"param error! GPIO.mode(pin,mode)\n");
+		lua_pushstring(L,"param error! gpio.mode(pin,mode)\n");
 		lua_error(L);
 	}
 
