@@ -33,6 +33,20 @@ int gpio_write(int pin,int value);
 int gpio_read(int pin);
 int gpio_toggle(int pin);
 
+/* platform spi functions */
+enum {SPI_MODE0,SPI_MODE1,SPI_MODE2,SPI_MODE3};
+enum {SPI_MSBFIRST,SPI_LSBFIRST};
+#define is_spi_mode(mode) ( ((mode)>=SPI_MODE0)&&((mode)<=SPI_MODE3) )
+#define is_spi_order(order) (((order)==SPI_MSBFIRST)||((order)==SPI_LSBFIRST))
+#define is_spi_bauddiv(div) (((div)>=0)&&((div)<=7))
+
+int spi_init(int mode,int order,int bauddiv);
+int spi_mode(int mode);
+int spi_order(int order);
+int spi_div(int div);
+int spi_info(void);
+uint8_t spi_transfer(uint8_t data);
+
 /* decalre a GPIO_InitTypeDef valible. named as 'name'
  *  mode can be 'IN' ,'OUT', 'AF', 'AN'
  *  ppod can be 'PP' or 'OD'
@@ -58,6 +72,22 @@ int gpio_toggle(int pin);
 				.USART_WordLength=USART_WordLength_8b,\
 		};
 
+/* cpol can be 'Low' or 'High'
+ * cpha can be '1Edge' or '2Edge'
+ * order can be 'LSB' or 'MSB'
+ */
+#define DECLARE_SPI_INIT(name,cpol,cpha,order) \
+	SPI_InitTypeDef name = { \
+		.SPI_CRCPolynomial = 7, \
+		.SPI_NSS = SPI_NSS_Soft, \
+		.SPI_CPOL = SPI_CPOL_##cpol,\
+		.SPI_CPHA = SPI_CPHA_##cpha, \
+		.SPI_Mode = SPI_Mode_Master, \
+		.SPI_DataSize = SPI_DataSize_8b, \
+		.SPI_FirstBit = SPI_FirstBit_##order, \
+		.SPI_Direction = SPI_Direction_2Lines_FullDuplex, \
+		.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16, \
+	};
 
 
 #endif

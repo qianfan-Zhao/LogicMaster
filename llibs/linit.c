@@ -35,6 +35,7 @@
 #include "lauxlib.h"
 
 LUAMOD_API int luaopen_gpio (lua_State *L);
+LUAMOD_API int luaopen_spi (lua_State *L);
 /*
 ** these libs are loaded by lua.c and are readily available to any Lua
 ** program
@@ -56,6 +57,8 @@ static const luaL_Reg loadedlibs[] = {
 	
 	 /* logic master libs */
 	 {"gpio",luaopen_gpio},
+	 {"spi",luaopen_spi},
+	 
   {NULL, NULL}
 };
 

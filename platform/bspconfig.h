@@ -39,6 +39,11 @@ enum {GPIO_A0=16,GPIO_A1,GPIO_A2,GPIO_A3,GPIO_A4,GPIO_A5};
 #define USART_Handler() void USART2_IRQHandler(void)
 #define USART_ClkEn() \
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2,ENABLE)
+	
+#define SPI SPI1
+#define spi_cshigh() (GPIOB->BSRR = (1<<6) ) 
+#define spi_cslow()  (GPIOB->BRR  = (1<<6) )
+
 
 #endif
 
