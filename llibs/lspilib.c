@@ -22,8 +22,8 @@
 #define LSPI_LSBFIRST MAKE_P(SPI_LIB_TYPE,6,SPI_LSBFIRST)
 #define is_lspi_order(order) ( (P_TYPE(order)==SPI_LIB_TYPE) && \
                                (P_NUM(order)>=5)&&(P_NUM(order)<=6) )
-#define LSPI_HIGH		-1
-#define LSPI_LOW 		-2 /* spi token */             
+#define LSPI_HIGH		256
+#define LSPI_LOW 		257 /* spi token */             
 
 /* lua functions:
  * spi.init(mode,order)
@@ -160,35 +160,15 @@ static int lspi_dummybyte(lua_State *L)
 	return 1;
 }
 
-/* lua function:
- * spi.write(data_or_token,...)
- * data must from 0 to 255.(include 0 and 255)
- * token can be selected from LSPI_HIGH or LSPI_LOW.
- * LSPI_HIGH means pull up cs pin.
- * LSPI_LOW  means pull down cs pin.
+/* lua fucntion:
+ * spi.write(write_data,read_num,token,...)
+ * write_data,read_num,token can in any order.
+ * this is a multi-return function. 
+ * =>write_data must be 0 ~ 255.
+ * =>read_num is -n. n is the actually count of data you wanted read.
+ * =>token can be spi.HIGH or spi.LOW
  */
 static int lspi_write(lua_State *L)
-{
-	int i,param,paramcount;
-	
-	paramcount = lua_gettop(L);
-	for(i=0;i<paramcount;i++){
-		switch(param=luaL_checkinteger(L,i+1)) /* lua index from 1 NOT 0 */
-		{
-			case LSPI_HIGH: spi_cshigh();break;
-			case LSPI_LOW: spi_cslow(); break;
-			default: spi_transfer(param);break;
-		}
-	}
-	return 0;
-}
-
-/* lua fucntion:
- * spi.read(readnum_or_token,...)
- * 'readnum' MUST > 0. token can be LSPI_HIGH or LSPI_LOW
- * this is a multi-return function in lua. return value is the actually data.
- */
-static int lspi_read(lua_State *L)
 {
 	int i,j;
 	int param,paramcount,*parambuffer;
@@ -205,11 +185,14 @@ static int lspi_read(lua_State *L)
 	for(i=0;i<paramcount;i++){
 		switch(param=parambuffer[i]){
 		case LSPI_HIGH: spi_cshigh(); break;
-		case LSPI_LOW: spi_cslow();  break;
-		default: /* need read count of 'param' data */
-			if(!lua_checkstack(L,param)) goto nomem;/* memory isn't enough */
-			for(j=0;j<param;j++) lua_pushinteger(L,spi_transfer(dummybyte));
-			count += param;
+		case LSPI_LOW:  spi_cslow();  break;
+		default:
+			if(param>=0) spi_transfer(param);/* the data need writed to MOSI */
+			else { /* -param is count of data need read */
+				if(!lua_checkstack(L,-param)) goto nomem;/* memory isn't enough */
+				for(j=0;j<-param;j++) lua_pushinteger(L,spi_transfer(dummybyte));
+				count += (-param);
+			}
 			break;
 		}
 	}
@@ -219,7 +202,7 @@ static int lspi_read(lua_State *L)
 	
 	notint:
 		free(parambuffer);
-		lua_pushstring(L,"param error! 'readnum' MUST > 0,"
+		lua_pushstring(L,"param error! 'readnum' MUST be -n."
 										 "token can be spi.HIGH or spi.LOW.");
 		lua_error(L);
 		return 0;
@@ -289,7 +272,6 @@ static const luaL_Reg spiLib[] = {
 	{"info",lspi_info},
 	{"dummybyte",lspi_dummybyte},
 	{"write",lspi_write},
-	{"read",lspi_read},
 	{"transfer",lspi_transfer},
 	
 	{"MODE0",NULL},
