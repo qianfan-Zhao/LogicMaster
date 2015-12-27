@@ -10,7 +10,7 @@
 #include "makeparam.h"
 
 /* spi LIB type,used for create param */
-#define SPI_LIB_TYPE	'g'
+#define SPI_LIB_TYPE	'p'
 
 #define LSPI_MODE0 MAKE_P(SPI_LIB_TYPE,1,SPI_MODE0)
 #define LSPI_MODE1 MAKE_P(SPI_LIB_TYPE,2,SPI_MODE1)
