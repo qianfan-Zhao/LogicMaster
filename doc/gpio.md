@@ -53,7 +53,7 @@
 > **value** : the actual value you wanted write to this pin. If param 'value' is zero,this function will reset pin. Else(non-zero) will set this pin<br>
 
 + gpio.read(pin)
-+ gpio.read(pin, ... )   
++ gpio.read(pin,  ...  )   
  > *read pin's value,and return it. This is a multi-return function in lua. If param 'pin' isn't a valid number,this function will return -1.Else return the actually value on this pin* <br>
  > **pin** :like gpio.mode's param<br>
 
@@ -119,7 +119,7 @@ end
 > **value** : 实际需要输出的数值。0表示拉低该引脚。其余的任何非零值都是拉高该引脚。<br>
 
 + gpio.read(pin)
-+ gpio.read(pin, ... )   
++ gpio.read(pin,  ...  )   
  >  *读取指定的引脚数值，并返回。不同于c语言，在lua函数中，这是一个多返回值的函数。如果指定的引脚不是gpio引脚，那么该引脚的电平值为-1.否则为实际的电平值。*<br>
  >  **pin**: 请为pin至少指定一个参数。若指定多个pin，那么将会得到多个返回值<br>
 

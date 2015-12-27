@@ -36,19 +36,21 @@
 > 当这个函数不指定参数的时候，返回当前的dummybyte。如果指定了byte，那么将dummybyte设置为参数的数值。<br>
 > **参数byte必须是0 ～ 255之间的数值**
 
-+ spi.write(write_data,read_num,token, ... )
-> *这是一个可变参数的函数，即可以发送数据，又可以读取数据。另外还能用它控制spi的cs信号线（D10）。write_data, read_num, token可以使用任意组合和任意的顺序出现*<br>
++ spi.write(write_data,read_num,token,string  ... )
+> *这是一个可变参数的函数，即可以发送数据，又可以读取数据。另外还能用它控制spi的cs信号线（D10）。write_data, read_num, token,string可以使用任意组合和任意的顺序出现*<br>
 > **write_data**:需要使用spi发送的数据。**必须**是0 ~ 255之间的数据。如果大于255,那么只保留最低的一个字节（另外，256表示spi.HIGH,257表示spi.LOW）。不限制发送的个数（*该函数最大的参数个数只与单片机的内存大小相关*）<br>
+> **string**: 发送的数据除了可以为0～255之间的数据之外，也可以发送lua 字符串。例如"Hello world"。<br>
 > **read_num**:需要读取的字节个数。**为了与write_data进行区分，这个参数必须是负数，例如-10表示读取10个字节**。<br>
 > **token**:token可以是spi.HIGH或spi.LOW。分别表示将cs拉高和拉低。<br>
 > **Example**:拉低cs信号线，发送0x90,0x00,0x00,0x00,之后读取两个字节：<br>
 > *spi.write(spi.LOW,0x90,0x00,0x00,0x00,-2,spi.HIGH)*<br>
 
-+ spi.transfer(data_or_token, ... )
++ spi.transfer(data_or_token,string,  ... )
 > *在发送数据到MOSI的同时，将MISO总线上的数据缓存。在数据全部发送成功之后，返回所有缓存数据。*<br>
-> **data_or_token**: 可以是待发送的数据（**必须在0 ～ 255之间**）或者是token。
+> **data_or_token**: 可以是待发送的数据（**必须在0 ～ 255之间或者lua string**）或者是token。
 
 ##Examples
+**spi部分详细的实例可以参考example/文件夹。里面有针对具体芯片的文档。**
 + 设置spi为模式3,MSBFIRST。
 ```lua
 spi.init(spi.MODE3,spi.MSBFIRST)
