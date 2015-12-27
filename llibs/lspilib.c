@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "platform.h"
 #include "makeparam.h"
@@ -160,6 +161,57 @@ static int lspi_dummybyte(lua_State *L)
 	return 1;
 }
 
+#define PARAM_WRITEDATA 0 /* param >= 0 except TOKEN */
+#define PARAM_READNUM 	1 /* param <  0              */
+#define PARAM_TOKEN 		2 /* 256(HIGH) or 257(LOW)   */
+#define PARAM_STRING		3 /* string param            */
+struct param
+{
+	uint8_t type;
+	union {
+		int writedata;
+		int readnum;
+		int token;
+		const char *str;
+	}data;
+};
+
+/* example params:
+ * (spi.LOW,0x90,0x00,0x00,0x00,0x01,0x02,-2,"Hello world",spi.HIGH)
+ * spi.HIGH, spi.LOW: token
+ * 0x90,0x00,0x01,0x02: data needed sended to MOSI 
+ * -2: readnum. read 2-bytes from MISO
+ * "Hello world": string needed sended to MOSI 
+ */
+static int cpparam2buf(lua_State *L,struct param *parambuffer,int paramcount)
+{
+	int i,err,intdata;
+	for(i=0;i<paramcount;i++){
+		if(lua_type(L,i+1)==LUA_TSTRING) { /* lua index from 1 NOT 0 */
+			parambuffer[i].type=PARAM_STRING;
+			parambuffer[i].data.str=lua_tostring(L,i+1);
+			continue;
+		}
+		/* param not string. Maybe integer */
+		intdata=lua_tointegerx(L,i+1,&err);
+		if(!err) return -1; /* param does not integer or string,doesn't supports */
+		
+		if((intdata==LSPI_HIGH)||(intdata==LSPI_LOW)){
+			parambuffer[i].type=PARAM_TOKEN;
+			parambuffer[i].data.token=intdata;
+		}
+		else if(intdata>=0){ /* writedata */
+			parambuffer[i].type=PARAM_WRITEDATA;
+			parambuffer[i].data.writedata=intdata;
+		}
+		else { /* read number */
+			parambuffer[i].type=PARAM_READNUM;
+			parambuffer[i].data.readnum=-intdata;
+		}
+	}
+	return 0;
+}
+
 /* lua fucntion:
  * spi.write(write_data,read_num,token,...)
  * write_data,read_num,token can in any order.
@@ -170,40 +222,43 @@ static int lspi_dummybyte(lua_State *L)
  */
 static int lspi_write(lua_State *L)
 {
-	int i,j;
-	int param,paramcount,*parambuffer;
-	int count = 0;
-	
+	const char *str;
+	int revcount = 0;
+	int i,j,paramcount;
+	struct param *parambuffer;
 	paramcount=lua_gettop(L);
-	parambuffer=(int *)malloc(sizeof(int)*paramcount);
-	for(i=0;i<paramcount;i++){ /* saving param to 'parambuffer' */
-		if(!lua_isinteger(L,i+1)) goto notint;/* lua index from 1 NOT 0 */
-		parambuffer[i]=lua_tointeger(L,i+1);
-	}
+	parambuffer=(struct param *)malloc(sizeof(struct param)*paramcount);
 	
+	if(cpparam2buf(L,parambuffer,paramcount)) goto paramerr;
 	/* analysis param */
 	for(i=0;i<paramcount;i++){
-		switch(param=parambuffer[i]){
-		case LSPI_HIGH: spi_cshigh(); break;
-		case LSPI_LOW:  spi_cslow();  break;
-		default:
-			if(param>=0) spi_transfer(param);/* the data need writed to MOSI */
-			else { /* -param is count of data need read */
-				if(!lua_checkstack(L,-param)) goto nomem;/* memory isn't enough */
-				for(j=0;j<-param;j++) lua_pushinteger(L,spi_transfer(dummybyte));
-				count += (-param);
-			}
+		switch(parambuffer[i].type){
+		case PARAM_STRING:
+			str=parambuffer[i].data.str;
+			for(;*str!='\0';str++) spi_transfer(*str);
+			break;
+		case PARAM_WRITEDATA:
+			spi_transfer(parambuffer[i].data.writedata);
+			break;
+		case PARAM_TOKEN:
+			if(parambuffer[i].data.token==LSPI_HIGH) spi_cshigh();
+			else spi_cslow();
+			break;
+		case PARAM_READNUM:
+			if(!lua_checkstack(L,parambuffer[i].data.readnum)) goto nomem;
+			for(j=0;j<parambuffer[i].data.readnum;j++)
+				lua_pushinteger(L,spi_transfer(dummybyte));
+			revcount += j;
 			break;
 		}
 	}
 	
 	free(parambuffer);
-	return count;
+	return revcount;
 	
-	notint:
+	paramerr:
 		free(parambuffer);
-		lua_pushstring(L,"param error! 'readnum' MUST be -n."
-										 "token can be spi.HIGH or spi.LOW.");
+		lua_pushstring(L,"param error! param only can be integer or string.");
 		lua_error(L);
 		return 0;
 	
@@ -222,44 +277,55 @@ static int lspi_write(lua_State *L)
  */
 static int lspi_transfer(lua_State *L)
 {
-	int i,j;
-	int param,paramcount,*parambuffer;
-	int count = 0;
-	
+	const char *str;
+	int revcount = 0;
+	int i,j,len,paramcount;
+	struct param *parambuffer;
 	paramcount=lua_gettop(L);
-	parambuffer=(int *)malloc(sizeof(int)*paramcount);
-	for(i=0;i<paramcount;i++){ /* saving param to 'parambuffer' */
-		if(!lua_isinteger(L,i+1)) goto notint;/* lua index from 1 NOT 0 */
-		parambuffer[i]=lua_tointeger(L,i+1);
-	}
+	parambuffer=(struct param *)malloc(sizeof(struct param)*paramcount);
 	
-	/* 
-	 * Maybe has token in param, but in order to make programe easier,
-	 * I just ignore all token.
-	 */
-	if(!lua_checkstack(L,paramcount)) goto nomem;
+	if(cpparam2buf(L,parambuffer,paramcount)) goto paramerr;
+	/* analysis param */
 	for(i=0;i<paramcount;i++){
-		switch(param=parambuffer[i]){
-		case LSPI_HIGH: spi_cshigh(); break;
-		case LSPI_LOW: spi_cslow();  break;
-		default: lua_pushinteger(L,spi_transfer(param)); count++; break;
+		switch(parambuffer[i].type){
+		case PARAM_STRING:
+			str=parambuffer[i].data.str;
+			len=strlen(str);
+			if(!lua_checkstack(L,len)) goto nomem;
+			for(;*str!='\0';str++)  lua_pushinteger(L,spi_transfer(*str));
+			revcount += len;
+			break;
+		case PARAM_WRITEDATA:
+			if(!lua_checkstack(L,1)) goto nomem;
+			lua_pushinteger(L,spi_transfer(parambuffer[i].data.writedata));
+			revcount++;
+			break;
+		case PARAM_TOKEN:
+			if(parambuffer[i].data.token==LSPI_HIGH) spi_cshigh();
+			else spi_cslow();
+			break;
+		case PARAM_READNUM:
+			if(!lua_checkstack(L,parambuffer[i].data.readnum)) goto nomem;
+			for(j=0;j<parambuffer[i].data.readnum;j++)
+				lua_pushinteger(L,spi_transfer(dummybyte));
+			revcount += j;
+			break;
 		}
 	}
 	
 	free(parambuffer);
-	return count;
+	return revcount;
 	
-	notint:
+	paramerr:
 		free(parambuffer);
-		lua_pushstring(L,"param error! 'readnum' MUST > 0,"
-										 "token can be spi.HIGH or spi.LOW.");
+		lua_pushstring(L,"param error! param only can be integer or string.");
 		lua_error(L);
 		return 0;
-		
+	
 	nomem:
 		free(parambuffer);
 		lua_settop(L,0);/* clear stack */
-		lua_pushstring(L,"Error! memory isn't enough!");
+		lua_pushstring(L,"Error! 'readnum' is too larger, memory isn't enough!");
 		lua_error(L);
 		return 0;
 }
